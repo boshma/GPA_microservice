@@ -11,4 +11,5 @@ import java.util.List;
 public interface FoodRepository extends MongoRepository<Food, String> {
     List<Food> findByDate(LocalDate date);
     List<Food> findByUserId(String userId);
+    List<Food> findByDateAndUserId(LocalDate date, String userId);
 }

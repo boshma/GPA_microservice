@@ -25,23 +25,30 @@ public class FoodService {
         return foodRepository.save(food);
     }
 
-    public List<Food> getAllFood(String date) {
+    public List<Food> getAllFood(String date, String userId) {
         if (date != null) {
             LocalDate parsedDate = LocalDate.parse(date);
-            return foodRepository.findByDate(parsedDate);
+            return foodRepository.findByDateAndUserId(parsedDate, userId);
         }
-        return foodRepository.findAll();
+        return foodRepository.findByUserId(userId);
     }
 
-    public Food getFoodById(String id) {
-        return foodRepository.findById(id)
+    public Food getFoodById(String id, String userId) {
+        Food food = foodRepository.findById(id)
             .orElseThrow(() -> new ResponseStatusException(
                 HttpStatus.NOT_FOUND, "Meal not found"));
+                
+        if (!food.getUserId().equals(userId)) {
+            throw new ResponseStatusException(
+                HttpStatus.FORBIDDEN, "Access denied");
+        }
+        
+        return food;
     }
 
-    public Food updateFood(String id, Food food) {
+    public Food updateFood(String id, Food food, String userId) {
         validateFood(food);
-        Food existingFood = getFoodById(id);
+        Food existingFood = getFoodById(id, userId);
         
         existingFood.setName(food.getName());
         existingFood.setProtein(food.getProtein());
@@ -53,8 +60,8 @@ public class FoodService {
         return foodRepository.save(existingFood);
     }
 
-    public void deleteFood(String id) {
-        Food food = getFoodById(id);
+    public void deleteFood(String id, String userId) {
+        Food food = getFoodById(id, userId);
         foodRepository.delete(food);
     }
 
