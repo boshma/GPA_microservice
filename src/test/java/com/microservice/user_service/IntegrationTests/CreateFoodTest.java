@@ -1,4 +1,4 @@
-package com.microservice.user_service;
+package com.microservice.user_service.IntegrationTests;
 
 import java.io.IOException;
 import java.net.URI;
@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ApplicationContext;
 
+import com.microservice.user_service.UserServiceApplication;
 import com.microservice.user_service.model.Food;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
