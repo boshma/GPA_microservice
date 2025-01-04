@@ -18,6 +18,11 @@ public class FoodService {
     @Autowired
     private FoodRepository foodRepository;
 
+    public void setFoodRepository(FoodRepository foodRepository) {
+        this.foodRepository = foodRepository;
+    }
+
+
     public Food createFood(Food food) {
         validateFood(food);
         food.setCreatedAt(LocalDateTime.now());
