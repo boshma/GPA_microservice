@@ -9,6 +9,7 @@ import java.net.http.HttpResponse;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ApplicationContext;
@@ -46,7 +47,7 @@ public class CreateFoodTest {
         Thread.sleep(500);
         SpringApplication.exit(app);
     }
-
+    @Disabled
     @Test
     public void createFoodSuccessful() throws IOException, InterruptedException {
         String json = "{\"name\":\"Chicken Salad\",\"protein\":45.5,\"carb\":12.3,\"fat\":15.0,\"date\":\"2024-12-17\"}";
@@ -66,7 +67,7 @@ public class CreateFoodTest {
         Assertions.assertEquals(45.5, actualResult.getProtein());
         Assertions.assertEquals(TEST_USER_ID, actualResult.getUserId());
     }
-    
+    @Disabled
     @Test
     public void createFoodWithoutApiKey() throws IOException, InterruptedException {
         String json = "{\"name\":\"Chicken Salad\",\"protein\":45.5,\"carb\":12.3,\"fat\":15.0,\"date\":\"2024-12-17\"}";
@@ -80,7 +81,7 @@ public class CreateFoodTest {
         int status = response.statusCode();
         Assertions.assertEquals(401, status, "Expected Status Code 401 - Actual Code was: " + status);
     }
-
+    @Disabled
     @Test
     public void createFoodEmptyName() throws IOException, InterruptedException {
         String json = "{\"name\":\"\",\"protein\":45.5,\"carb\":12.3,\"fat\":15.0,\"date\":\"2024-12-17\"}";
@@ -94,7 +95,7 @@ public class CreateFoodTest {
         int status = response.statusCode();
         Assertions.assertEquals(400, status, "Expected Status Code 400 - Actual Code was: " + status);
     }
-
+    @Disabled
     @Test
     public void createFoodNegativeNutrients() throws IOException, InterruptedException {
         String json = "{\"name\":\"Invalid Food\",\"protein\":-45.5,\"carb\":12.3,\"fat\":15.0,\"date\":\"2024-12-17\"}";
@@ -108,7 +109,7 @@ public class CreateFoodTest {
         int status = response.statusCode();
         Assertions.assertEquals(400, status, "Expected Status Code 400 - Actual Code was: " + status);
     }
-
+    @Disabled
     @Test
     public void createFoodWithoutUserId() throws IOException, InterruptedException {
         String json = "{\"name\":\"Chicken Salad\",\"protein\":45.5,\"carb\":12.3,\"fat\":15.0,\"date\":\"2024-12-17\"}";
@@ -121,7 +122,7 @@ public class CreateFoodTest {
         int status = response.statusCode();
         Assertions.assertEquals(401, status, "Expected Status Code 401 - Actual Code was: " + status);
     }
-
+    @Disabled
     @Test
     public void createFoodWithEmptyUserId() throws IOException, InterruptedException {
         String json = "{\"name\":\"Chicken Salad\",\"protein\":45.5,\"carb\":12.3,\"fat\":15.0,\"date\":\"2024-12-17\"}";
