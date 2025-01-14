@@ -35,9 +35,8 @@ class ReadFoodServiceTest {
     void getAllFood_WithDate() {
         LocalDate date = LocalDate.now();
         List<Food> expectedFoods = Arrays.asList(
-            createValidFood(),
-            createValidFood()
-        );
+                createValidFood(),
+                createValidFood());
 
         when(foodRepository.findByDateAndUserId(date, TEST_USER_ID)).thenReturn(expectedFoods);
 
@@ -51,10 +50,9 @@ class ReadFoodServiceTest {
     @Test
     void getAllFood_WithoutDate() {
         List<Food> expectedFoods = Arrays.asList(
-            createValidFood(),
-            createValidFood(),
-            createValidFood()
-        );
+                createValidFood(),
+                createValidFood(),
+                createValidFood());
 
         when(foodRepository.findByUserId(TEST_USER_ID)).thenReturn(expectedFoods);
 
@@ -85,7 +83,7 @@ class ReadFoodServiceTest {
         when(foodRepository.findById("123")).thenReturn(Optional.empty());
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-            () -> foodService.getFoodById("123", TEST_USER_ID));
+                () -> foodService.getFoodById("123", TEST_USER_ID));
         assertEquals("Meal not found", exception.getReason());
     }
 
@@ -98,7 +96,7 @@ class ReadFoodServiceTest {
         when(foodRepository.findById("123")).thenReturn(Optional.of(food));
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-            () -> foodService.getFoodById("123", TEST_USER_ID));
+                () -> foodService.getFoodById("123", TEST_USER_ID));
         assertEquals("Access denied", exception.getReason());
     }
 

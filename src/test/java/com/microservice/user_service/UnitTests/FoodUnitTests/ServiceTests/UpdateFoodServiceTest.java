@@ -60,7 +60,7 @@ class UpdateFoodServiceTest {
         when(foodRepository.findById("123")).thenReturn(Optional.empty());
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-            () -> foodService.updateFood("123", updatedFood, TEST_USER_ID));
+                () -> foodService.updateFood("123", updatedFood, TEST_USER_ID));
         assertEquals("Meal not found", exception.getReason());
         verify(foodRepository, never()).save(any(Food.class));
     }
@@ -75,7 +75,7 @@ class UpdateFoodServiceTest {
         when(foodRepository.findById("123")).thenReturn(Optional.of(existingFood));
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-            () -> foodService.updateFood("123", updatedFood, TEST_USER_ID));
+                () -> foodService.updateFood("123", updatedFood, TEST_USER_ID));
         assertEquals("Access denied", exception.getReason());
         verify(foodRepository, never()).save(any(Food.class));
     }
@@ -86,7 +86,7 @@ class UpdateFoodServiceTest {
         updatedFood.setName("");
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-            () -> foodService.updateFood("123", updatedFood, TEST_USER_ID));
+                () -> foodService.updateFood("123", updatedFood, TEST_USER_ID));
         assertEquals("Name is required", exception.getReason());
         verify(foodRepository, never()).findById(any());
         verify(foodRepository, never()).save(any(Food.class));
@@ -98,7 +98,7 @@ class UpdateFoodServiceTest {
         updatedFood.setProtein(-1.0);
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-            () -> foodService.updateFood("123", updatedFood, TEST_USER_ID));
+                () -> foodService.updateFood("123", updatedFood, TEST_USER_ID));
         assertEquals("Nutritional values cannot be negative", exception.getReason());
         verify(foodRepository, never()).findById(any());
         verify(foodRepository, never()).save(any(Food.class));

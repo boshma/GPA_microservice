@@ -37,7 +37,7 @@ class CreateFoodControllerTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        
+
         Authentication auth = new UsernamePasswordAuthenticationToken(USER_ID, null, new ArrayList<>());
         SecurityContext securityContext = mock(SecurityContext.class);
         when(securityContext.getAuthentication()).thenReturn(auth);
@@ -62,10 +62,10 @@ class CreateFoodControllerTest {
     void createFood_ValidationError() {
         Food food = createValidFood();
         when(foodService.createFood(any(Food.class)))
-            .thenThrow(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid input"));
+                .thenThrow(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid input"));
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-            () -> foodController.createFood(food));
+                () -> foodController.createFood(food));
         assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
         assertEquals("Invalid input", exception.getReason());
         verify(foodService).createFood(any(Food.class));
@@ -76,7 +76,7 @@ class CreateFoodControllerTest {
         SecurityContextHolder.clearContext();
 
         SecurityException exception = assertThrows(SecurityException.class,
-            () -> foodController.createFood(createValidFood()));
+                () -> foodController.createFood(createValidFood()));
         assertEquals("User not authenticated", exception.getMessage());
         verify(foodService, never()).createFood(any(Food.class));
     }

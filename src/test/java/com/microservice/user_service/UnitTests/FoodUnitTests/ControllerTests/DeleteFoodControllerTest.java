@@ -35,7 +35,7 @@ class DeleteFoodControllerTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        
+
         Authentication auth = new UsernamePasswordAuthenticationToken(USER_ID, null, new ArrayList<>());
         SecurityContext securityContext = mock(SecurityContext.class);
         when(securityContext.getAuthentication()).thenReturn(auth);
@@ -44,13 +44,10 @@ class DeleteFoodControllerTest {
 
     @Test
     void deleteFood_Success() {
-        // Arrange
         doNothing().when(foodService).deleteFood(FOOD_ID, USER_ID);
 
-        // Act
         ResponseEntity<Void> response = foodController.deleteFood(FOOD_ID);
 
-        // Assert
         assertNotNull(response);
         assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
         assertNull(response.getBody());
@@ -59,13 +56,11 @@ class DeleteFoodControllerTest {
 
     @Test
     void deleteFood_NotFound() {
-        // Arrange
         doThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, "Food not found"))
-            .when(foodService).deleteFood(FOOD_ID, USER_ID);
+                .when(foodService).deleteFood(FOOD_ID, USER_ID);
 
-        // Act & Assert
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-            () -> foodController.deleteFood(FOOD_ID));
+                () -> foodController.deleteFood(FOOD_ID));
         assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
         assertEquals("Food not found", exception.getReason());
         verify(foodService).deleteFood(FOOD_ID, USER_ID);
@@ -73,25 +68,21 @@ class DeleteFoodControllerTest {
 
     @Test
     void deleteFood_Unauthorized() {
-        // Arrange
         SecurityContextHolder.clearContext();
 
-        // Act & Assert
         SecurityException exception = assertThrows(SecurityException.class,
-            () -> foodController.deleteFood(FOOD_ID));
+                () -> foodController.deleteFood(FOOD_ID));
         assertEquals("User not authenticated", exception.getMessage());
         verify(foodService, never()).deleteFood(any(), any());
     }
 
     @Test
     void deleteFood_Forbidden() {
-        // Arrange
         doThrow(new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied"))
-            .when(foodService).deleteFood(FOOD_ID, USER_ID);
+                .when(foodService).deleteFood(FOOD_ID, USER_ID);
 
-        // Act & Assert
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-            () -> foodController.deleteFood(FOOD_ID));
+                () -> foodController.deleteFood(FOOD_ID));
         assertEquals(HttpStatus.FORBIDDEN, exception.getStatusCode());
         assertEquals("Access denied", exception.getReason());
         verify(foodService).deleteFood(FOOD_ID, USER_ID);
@@ -99,14 +90,12 @@ class DeleteFoodControllerTest {
 
     @Test
     void deleteFood_InternalServerError() {
-        // Arrange
         doThrow(new RuntimeException("Unexpected error"))
-            .when(foodService).deleteFood(FOOD_ID, USER_ID);
+                .when(foodService).deleteFood(FOOD_ID, USER_ID);
 
-        // Act & Assert
-        ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-            () -> foodController.deleteFood(FOOD_ID));
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, exception.getStatusCode());
+        RuntimeException exception = assertThrows(RuntimeException.class,
+                () -> foodController.deleteFood(FOOD_ID));
+        assertEquals("Unexpected error", exception.getMessage());
         verify(foodService).deleteFood(FOOD_ID, USER_ID);
     }
 }

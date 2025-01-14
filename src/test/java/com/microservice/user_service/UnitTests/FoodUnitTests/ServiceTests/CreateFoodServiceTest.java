@@ -46,8 +46,8 @@ class CreateFoodServiceTest {
         Food food = createValidFood();
         food.setName("");
 
-        ResponseStatusException exception = assertThrows(ResponseStatusException.class, 
-            () -> foodService.createFood(food));
+        ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+                () -> foodService.createFood(food));
         assertEquals("Name is required", exception.getReason());
         verify(foodRepository, never()).save(any(Food.class));
     }
@@ -57,8 +57,8 @@ class CreateFoodServiceTest {
         Food food = createValidFood();
         food.setProtein(-1.0);
 
-        ResponseStatusException exception = assertThrows(ResponseStatusException.class, 
-            () -> foodService.createFood(food));
+        ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+                () -> foodService.createFood(food));
         assertEquals("Nutritional values cannot be negative", exception.getReason());
         verify(foodRepository, never()).save(any(Food.class));
     }
@@ -68,8 +68,8 @@ class CreateFoodServiceTest {
         Food food = createValidFood();
         food.setDate(null);
 
-        ResponseStatusException exception = assertThrows(ResponseStatusException.class, 
-            () -> foodService.createFood(food));
+        ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+                () -> foodService.createFood(food));
         assertEquals("Date is required", exception.getReason());
         verify(foodRepository, never()).save(any(Food.class));
     }

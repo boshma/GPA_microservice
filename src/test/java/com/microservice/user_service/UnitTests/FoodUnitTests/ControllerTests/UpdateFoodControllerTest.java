@@ -39,7 +39,7 @@ class UpdateFoodControllerTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        
+
         Authentication auth = new UsernamePasswordAuthenticationToken(USER_ID, null, new ArrayList<>());
         SecurityContext securityContext = mock(SecurityContext.class);
         when(securityContext.getAuthentication()).thenReturn(auth);
@@ -51,9 +51,9 @@ class UpdateFoodControllerTest {
         Food foodToUpdate = createValidFood();
         Food updatedFood = createValidFood();
         updatedFood.setName("Updated Food Name");
-        
+
         when(foodService.updateFood(eq(FOOD_ID), any(Food.class), eq(USER_ID)))
-            .thenReturn(updatedFood);
+                .thenReturn(updatedFood);
 
         ResponseEntity<Food> response = foodController.updateFood(FOOD_ID, foodToUpdate);
 
@@ -69,10 +69,10 @@ class UpdateFoodControllerTest {
     void updateFood_NotFound() {
         Food foodToUpdate = createValidFood();
         when(foodService.updateFood(eq(FOOD_ID), any(Food.class), eq(USER_ID)))
-            .thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, "Food not found"));
+                .thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, "Food not found"));
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-            () -> foodController.updateFood(FOOD_ID, foodToUpdate));
+                () -> foodController.updateFood(FOOD_ID, foodToUpdate));
         assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
         assertEquals("Food not found", exception.getReason());
         verify(foodService).updateFood(eq(FOOD_ID), any(Food.class), eq(USER_ID));
@@ -82,10 +82,10 @@ class UpdateFoodControllerTest {
     void updateFood_ValidationError() {
         Food invalidFood = createValidFood();
         when(foodService.updateFood(eq(FOOD_ID), any(Food.class), eq(USER_ID)))
-            .thenThrow(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid input"));
+                .thenThrow(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid input"));
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-            () -> foodController.updateFood(FOOD_ID, invalidFood));
+                () -> foodController.updateFood(FOOD_ID, invalidFood));
         assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
         assertEquals("Invalid input", exception.getReason());
         verify(foodService).updateFood(eq(FOOD_ID), any(Food.class), eq(USER_ID));
@@ -97,7 +97,7 @@ class UpdateFoodControllerTest {
         Food foodToUpdate = createValidFood();
 
         SecurityException exception = assertThrows(SecurityException.class,
-            () -> foodController.updateFood(FOOD_ID, foodToUpdate));
+                () -> foodController.updateFood(FOOD_ID, foodToUpdate));
         assertEquals("User not authenticated", exception.getMessage());
         verify(foodService, never()).updateFood(any(), any(), any());
     }
@@ -106,10 +106,10 @@ class UpdateFoodControllerTest {
     void updateFood_Forbidden() {
         Food foodToUpdate = createValidFood();
         when(foodService.updateFood(eq(FOOD_ID), any(Food.class), eq(USER_ID)))
-            .thenThrow(new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied"));
+                .thenThrow(new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied"));
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-            () -> foodController.updateFood(FOOD_ID, foodToUpdate));
+                () -> foodController.updateFood(FOOD_ID, foodToUpdate));
         assertEquals(HttpStatus.FORBIDDEN, exception.getStatusCode());
         assertEquals("Access denied", exception.getReason());
         verify(foodService).updateFood(eq(FOOD_ID), any(Food.class), eq(USER_ID));

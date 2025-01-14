@@ -40,7 +40,7 @@ class GetFoodControllerTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        
+
         Authentication auth = new UsernamePasswordAuthenticationToken(USER_ID, null, new ArrayList<>());
         SecurityContext securityContext = mock(SecurityContext.class);
         when(securityContext.getAuthentication()).thenReturn(auth);
@@ -80,7 +80,7 @@ class GetFoodControllerTest {
         SecurityContextHolder.clearContext();
 
         SecurityException exception = assertThrows(SecurityException.class,
-            () -> foodController.getAllFood(null));
+                () -> foodController.getAllFood(null));
         assertEquals("User not authenticated", exception.getMessage());
         verify(foodService, never()).getAllFood(any(), any());
     }
@@ -103,10 +103,10 @@ class GetFoodControllerTest {
     void getFoodById_NotFound() {
         String foodId = "nonexistentId";
         when(foodService.getFoodById(eq(foodId), eq(USER_ID)))
-            .thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, "Food not found"));
+                .thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, "Food not found"));
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-            () -> foodController.getFoodById(foodId));
+                () -> foodController.getFoodById(foodId));
         assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
         assertEquals("Food not found", exception.getReason());
         verify(foodService).getFoodById(foodId, USER_ID);
@@ -117,7 +117,7 @@ class GetFoodControllerTest {
         SecurityContextHolder.clearContext();
 
         SecurityException exception = assertThrows(SecurityException.class,
-            () -> foodController.getFoodById("testId"));
+                () -> foodController.getFoodById("testId"));
         assertEquals("User not authenticated", exception.getMessage());
         verify(foodService, never()).getFoodById(any(), any());
     }

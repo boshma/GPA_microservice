@@ -1,6 +1,5 @@
 package com.microservice.user_service.UnitTests.FoodUnitTests.ServiceTests;
 
-
 import com.microservice.user_service.model.Food;
 import com.microservice.user_service.repository.FoodRepository;
 import com.microservice.user_service.service.FoodService;
@@ -49,7 +48,7 @@ class DeleteFoodServiceTest {
         when(foodRepository.findById("123")).thenReturn(Optional.empty());
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-            () -> foodService.deleteFood("123", TEST_USER_ID));
+                () -> foodService.deleteFood("123", TEST_USER_ID));
         assertEquals("Meal not found", exception.getReason());
         verify(foodRepository, never()).delete(any(Food.class));
     }
@@ -63,7 +62,7 @@ class DeleteFoodServiceTest {
         when(foodRepository.findById("123")).thenReturn(Optional.of(food));
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-            () -> foodService.deleteFood("123", TEST_USER_ID));
+                () -> foodService.deleteFood("123", TEST_USER_ID));
         assertEquals("Access denied", exception.getReason());
         verify(foodRepository, never()).delete(any(Food.class));
     }
