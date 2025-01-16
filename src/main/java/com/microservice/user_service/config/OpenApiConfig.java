@@ -23,19 +23,27 @@ public class OpenApiConfig {
     @Bean
     public OpenAPI customOpenAPI() {
         final String securitySchemeName = "bearerAuth";
+        final String apiKeySchemeName = "apiKey";
+        
         return new OpenAPI()
                 .info(new Info()
                         .title("Food Tracking API")
                         .version("1.0")
                         .description("API for tracking food and nutritional intake"))
                 .addSecurityItem(new SecurityRequirement()
-                        .addList(securitySchemeName))
+                        .addList(securitySchemeName)
+                        .addList(apiKeySchemeName))
                 .components(new Components()
                         .addSecuritySchemes(securitySchemeName,
                                 new SecurityScheme()
                                         .name(securitySchemeName)
                                         .type(SecurityScheme.Type.HTTP)
                                         .scheme("bearer")
-                                        .bearerFormat("JWT")));
+                                        .bearerFormat("JWT"))
+                        .addSecuritySchemes(apiKeySchemeName,
+                                new SecurityScheme()
+                                        .name("X-API-Key")
+                                        .type(SecurityScheme.Type.APIKEY)
+                                        .in(SecurityScheme.In.HEADER)));
     }
 }
