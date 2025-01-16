@@ -23,20 +23,42 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-        
-        String authHeader = request.getHeader("Authorization");
 
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String jwt = authHeader.substring(7);
-            
-            if (jwtUtil.validateToken(jwt)) {
-                String userId = jwtUtil.extractUserId(jwt);
-                UsernamePasswordAuthenticationToken authentication = 
-                    new UsernamePasswordAuthenticationToken(userId, null, new ArrayList<>());
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-            }
+        // Skip auth for permitted paths
+        if (request.getRequestURI().startsWith("/api/auth/") ||
+                request.getRequestURI().startsWith("/swagger-ui/") ||
+                request.getRequestURI().startsWith("/v3/api-docs/")) {
+            filterChain.doFilter(request, response);
+            return;
         }
 
-        filterChain.doFilter(request, response);
+        String authHeader = request.getHeader("Authorization");
+
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("JWT token is missing");
+            return;
+        }
+
+        try {
+            String jwt = authHeader.substring(7);
+
+            if (!jwtUtil.validateToken(jwt)) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.getWriter().write("Invalid JWT token");
+                return;
+            }
+
+            String userId = jwtUtil.extractUserId(jwt);
+            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userId, null,
+                    new ArrayList<>());
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+
+            filterChain.doFilter(request, response);
+        } catch (Exception e) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("JWT token processing failed");
+            return;
+        }
     }
 }

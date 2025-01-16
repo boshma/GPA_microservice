@@ -3,6 +3,8 @@ package com.microservice.user_service.util;
 import com.nimbusds.jose.*;
 import com.nimbusds.jose.crypto.*;
 import com.nimbusds.jwt.*;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.text.ParseException;
@@ -11,8 +13,11 @@ import java.util.Date;
 @Component
 public class JwtUtil {
 
-    private final String SECRET_KEY = "secretsecretsecretsecret"; // Use a secure key in production
-    private final long EXPIRATION_TIME = 1000 * 60 * 60 * 24; // 24 hours
+    @Value("${jwt.secret:secretsecretsecretsecret}")
+    private String secretKey;
+
+    @Value("${jwt.expiration:86400000}")
+    private long expirationTime;
 
     /**
      * Generates a JWT token for the given userId.
@@ -26,7 +31,7 @@ public class JwtUtil {
             JWTClaimsSet claims = new JWTClaimsSet.Builder()
                     .subject(userId)
                     .issueTime(new Date())
-                    .expirationTime(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
+                    .expirationTime(new Date(System.currentTimeMillis() + this.expirationTime))
                     .build();
 
             // Create the JWS header with HMAC-SHA256 algorithm
@@ -36,7 +41,7 @@ public class JwtUtil {
             SignedJWT signedJWT = new SignedJWT(header, claims);
 
             // Sign the JWT with the secret key
-            JWSSigner signer = new MACSigner(SECRET_KEY.getBytes());
+            JWSSigner signer = new MACSigner(this.secretKey.getBytes());
             signedJWT.sign(signer);
 
             // Serialize the token
@@ -78,7 +83,7 @@ public class JwtUtil {
             SignedJWT signedJWT = SignedJWT.parse(token);
 
             // Verify the signature
-            JWSVerifier verifier = new MACVerifier(SECRET_KEY.getBytes());
+            JWSVerifier verifier = new MACVerifier(this.secretKey.getBytes());
             if (!signedJWT.verify(verifier)) {
                 return false;
             }
