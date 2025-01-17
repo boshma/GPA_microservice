@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-@Document(collection = "FoodandExercises")
+@Document(collection = "Food")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

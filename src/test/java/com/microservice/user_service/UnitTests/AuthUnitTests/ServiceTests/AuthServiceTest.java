@@ -1,4 +1,4 @@
-package com.microservice.user_service.UnitTests;
+package com.microservice.user_service.UnitTests.AuthUnitTests.ServiceTests;
 
 import com.microservice.user_service.model.User;
 import com.microservice.user_service.repository.UserRepository;
