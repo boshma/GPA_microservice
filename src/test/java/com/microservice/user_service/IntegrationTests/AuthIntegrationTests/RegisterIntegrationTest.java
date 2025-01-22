@@ -15,10 +15,11 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.http.MediaType;
 
 import com.microservice.user_service.UserServiceApplication;
+import com.microservice.user_service.IntegrationTests.BaseIntegrationTest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JsonNode;
 
-public class RegisterIntegrationTest {
+public class RegisterIntegrationTest extends BaseIntegrationTest {
     private ApplicationContext app;
     private HttpClient webClient;
     private ObjectMapper objectMapper;
@@ -26,6 +27,7 @@ public class RegisterIntegrationTest {
 
     @BeforeEach
     public void setUp() throws InterruptedException {
+        clearDatabase();
         webClient = HttpClient.newHttpClient();
         objectMapper = new ObjectMapper();
         String[] args = new String[] {};
