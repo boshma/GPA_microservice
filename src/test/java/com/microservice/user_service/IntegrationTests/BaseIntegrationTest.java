@@ -1,28 +1,20 @@
 package com.microservice.user_service.IntegrationTests;
 
-import org.testcontainers.containers.MongoDBContainer;
-import org.testcontainers.utility.DockerImageName;
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoClients;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.MongoTemplate;
 
+@SpringBootTest
+@ActiveProfiles("test")
 public abstract class BaseIntegrationTest {
-    protected static final MongoDBContainer mongoDBContainer;
     
-    static {
-        mongoDBContainer = new MongoDBContainer(DockerImageName.parse("mongo:6.0.8"));
-        mongoDBContainer.start();
-        
-        System.setProperty("spring.data.mongodb.uri", mongoDBContainer.getReplicaSetUrl());
-        System.setProperty("spring.data.mongodb.database", "test_db");
-        
-        System.setProperty("api.key", "test_api_key");
-        System.setProperty("jwt.secret", "test_jwt_secret_key_minimum_32_chars_long");
-        System.setProperty("jwt.expiration", "3600000");
-    }
+    @Autowired
+    protected MongoTemplate mongoTemplate;
 
     protected void clearDatabase() {
-        try (MongoClient mongoClient = MongoClients.create(mongoDBContainer.getReplicaSetUrl())) {
-            mongoClient.getDatabase("test_db").drop();
+        for (String collectionName : mongoTemplate.getCollectionNames()) {
+            mongoTemplate.getCollection(collectionName).drop();
         }
     }
 }
