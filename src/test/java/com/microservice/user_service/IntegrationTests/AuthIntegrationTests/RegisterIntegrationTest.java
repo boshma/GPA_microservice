@@ -10,6 +10,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ApplicationContext;
 import org.springframework.http.MediaType;
@@ -20,18 +22,31 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JsonNode;
 
 public class RegisterIntegrationTest extends BaseIntegrationTest {
+    private static final Logger logger = LoggerFactory.getLogger(RegisterIntegrationTest.class);
+    private static final String API_KEY = "test_api_key";
+
     private ApplicationContext app;
     private HttpClient webClient;
     private ObjectMapper objectMapper;
-    private static final String BASE_URL = "http://localhost:8080";
+    private String baseUrl;
 
     @BeforeEach
     public void setUp() throws InterruptedException {
         clearDatabase();
         webClient = HttpClient.newHttpClient();
         objectMapper = new ObjectMapper();
+
+        // Set random port and API key
+        System.setProperty("server.port", "0");
+        System.setProperty("api.key", API_KEY);
+
         String[] args = new String[] {};
         app = SpringApplication.run(UserServiceApplication.class, args);
+
+        // Get the actual port that was assigned
+        baseUrl = "http://localhost:" + app.getEnvironment().getProperty("local.server.port");
+        logger.info("Application started on port: " + app.getEnvironment().getProperty("local.server.port"));
+
         Thread.sleep(500);
     }
 
@@ -51,13 +66,17 @@ public class RegisterIntegrationTest extends BaseIntegrationTest {
             }""";
 
         HttpRequest registerRequest = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + "/api/auth/register"))
+                .uri(URI.create(baseUrl + "/api/auth/register"))
                 .POST(HttpRequest.BodyPublishers.ofString(registerJson))
                 .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                .header("X-API-Key", API_KEY)
                 .build();
 
         HttpResponse<String> response = webClient.send(registerRequest, HttpResponse.BodyHandlers.ofString());
         
+        logger.info("Register response status: " + response.statusCode());
+        logger.info("Register response body: " + response.body());
+
         int status = response.statusCode();
         Assertions.assertEquals(201, status, "Expected Status Code 201 - Actual Code was: " + status);
 
@@ -76,21 +95,26 @@ public class RegisterIntegrationTest extends BaseIntegrationTest {
             }""";
 
         HttpRequest firstRegister = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + "/api/auth/register"))
+                .uri(URI.create(baseUrl + "/api/auth/register"))
                 .POST(HttpRequest.BodyPublishers.ofString(registerJson))
                 .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                .header("X-API-Key", API_KEY)
                 .build();
 
         webClient.send(firstRegister, HttpResponse.BodyHandlers.ofString());
 
         HttpRequest secondRegister = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + "/api/auth/register"))
+                .uri(URI.create(baseUrl + "/api/auth/register"))
                 .POST(HttpRequest.BodyPublishers.ofString(registerJson))
                 .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                .header("X-API-Key", API_KEY)
                 .build();
 
         HttpResponse<String> response = webClient.send(secondRegister, HttpResponse.BodyHandlers.ofString());
         
+        logger.info("Register response status: " + response.statusCode());
+        logger.info("Register response body: " + response.body());
+
         int status = response.statusCode();
         Assertions.assertEquals(409, status, "Expected Status Code 409 - Actual Code was: " + status);
 
@@ -107,13 +131,17 @@ public class RegisterIntegrationTest extends BaseIntegrationTest {
             }""";
 
         HttpRequest registerRequest = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + "/api/auth/register"))
+                .uri(URI.create(baseUrl + "/api/auth/register"))
                 .POST(HttpRequest.BodyPublishers.ofString(registerJson))
                 .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                .header("X-API-Key", API_KEY)
                 .build();
 
         HttpResponse<String> response = webClient.send(registerRequest, HttpResponse.BodyHandlers.ofString());
         
+        logger.info("Register response status: " + response.statusCode());
+        logger.info("Register response body: " + response.body());
+
         int status = response.statusCode();
         Assertions.assertEquals(400, status, "Expected Status Code 400 - Actual Code was: " + status);
     }
@@ -127,13 +155,17 @@ public class RegisterIntegrationTest extends BaseIntegrationTest {
             }""";
 
         HttpRequest registerRequest = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + "/api/auth/register"))
+                .uri(URI.create(baseUrl + "/api/auth/register"))
                 .POST(HttpRequest.BodyPublishers.ofString(registerJson))
                 .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                .header("X-API-Key", API_KEY)
                 .build();
 
         HttpResponse<String> response = webClient.send(registerRequest, HttpResponse.BodyHandlers.ofString());
         
+        logger.info("Register response status: " + response.statusCode());
+        logger.info("Register response body: " + response.body());
+
         int status = response.statusCode();
         Assertions.assertEquals(400, status, "Expected Status Code 400 - Actual Code was: " + status);
     }
@@ -147,13 +179,17 @@ public class RegisterIntegrationTest extends BaseIntegrationTest {
             }""";
 
         HttpRequest registerRequest = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + "/api/auth/register"))
+                .uri(URI.create(baseUrl + "/api/auth/register"))
                 .POST(HttpRequest.BodyPublishers.ofString(registerJson))
                 .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                .header("X-API-Key", API_KEY)
                 .build();
 
         HttpResponse<String> response = webClient.send(registerRequest, HttpResponse.BodyHandlers.ofString());
         
+        logger.info("Register response status: " + response.statusCode());
+        logger.info("Register response body: " + response.body());
+
         int status = response.statusCode();
         Assertions.assertEquals(400, status, "Expected Status Code 400 - Actual Code was: " + status);
     }
@@ -168,13 +204,17 @@ public class RegisterIntegrationTest extends BaseIntegrationTest {
             }""";
 
         HttpRequest registerRequest = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + "/api/auth/register"))
+                .uri(URI.create(baseUrl + "/api/auth/register"))
                 .POST(HttpRequest.BodyPublishers.ofString(registerJson))
                 .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                .header("X-API-Key", API_KEY)
                 .build();
 
         HttpResponse<String> response = webClient.send(registerRequest, HttpResponse.BodyHandlers.ofString());
         
+        logger.info("Register response status: " + response.statusCode());
+        logger.info("Register response body: " + response.body());
+
         int status = response.statusCode();
         Assertions.assertEquals(400, status, "Expected Status Code 400 - Actual Code was: " + status);
     }
@@ -189,13 +229,17 @@ public class RegisterIntegrationTest extends BaseIntegrationTest {
             }""";
 
         HttpRequest registerRequest = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + "/api/auth/register"))
+                .uri(URI.create(baseUrl + "/api/auth/register"))
                 .POST(HttpRequest.BodyPublishers.ofString(registerJson))
                 .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                .header("X-API-Key", API_KEY)
                 .build();
 
         HttpResponse<String> response = webClient.send(registerRequest, HttpResponse.BodyHandlers.ofString());
         
+        logger.info("Register response status: " + response.statusCode());
+        logger.info("Register response body: " + response.body());
+
         int status = response.statusCode();
         Assertions.assertEquals(400, status, "Expected Status Code 400 - Actual Code was: " + status);
     }
