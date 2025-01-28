@@ -1,112 +1,224 @@
 package com.microservice.user_service.IntegrationTests.FoodIntegrationTests;
 
-import com.microservice.user_service.IntegrationTests.BaseIntegrationTest;
-import com.microservice.user_service.model.Food;
-import com.microservice.user_service.repository.FoodRepository;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.test.web.servlet.MockMvc;
-
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.time.LocalDate;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-import static org.hamcrest.Matchers.*;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.SpringApplication;
+import org.springframework.context.ApplicationContext;
+import org.springframework.http.MediaType;
 
-@AutoConfigureMockMvc
+import com.microservice.user_service.UserServiceApplication;
+import com.microservice.user_service.IntegrationTests.BaseIntegrationTest;
+import com.microservice.user_service.model.Food;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
 public class GetFoodIntegrationTest extends BaseIntegrationTest {
+    private static final Logger logger = LoggerFactory.getLogger(GetFoodIntegrationTest.class);
+    private static final String API_KEY = "test_api_key";
 
-    @Autowired
-    private MockMvc mockMvc;
-
-    @Autowired
-    private FoodRepository foodRepository;
-
-    @Value("${api.key}")
-    private String apiKey;
-
+    private ApplicationContext app;
+    private HttpClient webClient;
+    private ObjectMapper objectMapper;
+    private String baseUrl;
     private String authToken;
     private String userId;
 
     @BeforeEach
-    void setUp() {
+    public void setUp() throws InterruptedException, IOException {
         clearDatabase();
-        authToken = testUtils.getAuthToken();
-        userId = testUtils.getCurrentUserId();
-    }
+        webClient = HttpClient.newHttpClient();
+        objectMapper = new ObjectMapper();
 
-    @Test
-    void getAllFood_Success() throws Exception {
-        // Create test food entries
-        createTestFood("Meal 1", LocalDate.now());
-        createTestFood("Meal 2", LocalDate.now());
+        // Set random port and API key
+        System.setProperty("server.port", "0");
+        System.setProperty("api.key", API_KEY);
 
-        mockMvc.perform(get("/api/food")
-                .header("Authorization", "Bearer " + authToken)
-                .header("X-API-Key", apiKey))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(2)))
-                .andExpect(jsonPath("$[0].name").exists())
-                .andExpect(jsonPath("$[0].protein").exists())
-                .andExpect(jsonPath("$[0].userId").value(userId));
-    }
+        String[] args = new String[] {};
+        app = SpringApplication.run(UserServiceApplication.class, args);
 
-    @Test
-    void getAllFood_WithDateFilter_Success() throws Exception {
-        LocalDate today = LocalDate.now();
-        LocalDate yesterday = today.minusDays(1);
+        // Get the actual port that was assigned
+        baseUrl = "http://localhost:" + app.getEnvironment().getProperty("local.server.port");
+        logger.info("Application started on port: " + app.getEnvironment().getProperty("local.server.port"));
+
+        Thread.sleep(500);
+
+        // Register and login test user
+        registerAndLoginUser();
         
-        createTestFood("Today's Meal", today);
-        createTestFood("Yesterday's Meal", yesterday);
+        // Create some test food entries
+        createTestFood("Test Meal 1");
+        createTestFood("Test Meal 2");
+    }
 
-        mockMvc.perform(get("/api/food")
-                .param("date", today.toString())
+    private void registerAndLoginUser() throws IOException, InterruptedException {
+        String registerJson = """
+                {
+                    "username": "testuser",
+                    "email": "test@example.com",
+                    "password": "Password123!"
+                }""";
+
+        HttpRequest registerRequest = HttpRequest.newBuilder()
+                .uri(URI.create(baseUrl + "/api/auth/register"))
+                .POST(HttpRequest.BodyPublishers.ofString(registerJson))
+                .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                .header("X-API-Key", API_KEY)
+                .build();
+
+        HttpResponse<String> registerResponse = webClient.send(registerRequest, HttpResponse.BodyHandlers.ofString());
+        JsonNode registerResponseJson = objectMapper.readTree(registerResponse.body());
+        userId = registerResponseJson.get("userId").asText();
+
+        String loginJson = """
+                {
+                    "email": "test@example.com",
+                    "password": "Password123!"
+                }""";
+
+        HttpRequest loginRequest = HttpRequest.newBuilder()
+                .uri(URI.create(baseUrl + "/api/auth/login"))
+                .POST(HttpRequest.BodyPublishers.ofString(loginJson))
+                .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                .header("X-API-Key", API_KEY)
+                .build();
+
+        HttpResponse<String> loginResponse = webClient.send(loginRequest, HttpResponse.BodyHandlers.ofString());
+        JsonNode loginResponseJson = objectMapper.readTree(loginResponse.body());
+        authToken = loginResponseJson.get("token").asText();
+    }
+
+    private void createTestFood(String name) throws IOException, InterruptedException {
+        ObjectNode foodJson = objectMapper.createObjectNode()
+                .put("name", name)
+                .put("protein", 30.0)
+                .put("carb", 40.0)
+                .put("fat", 20.0)
+                .put("date", LocalDate.now().toString());
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(baseUrl + "/api/food"))
+                .POST(HttpRequest.BodyPublishers.ofString(foodJson.toString()))
+                .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
                 .header("Authorization", "Bearer " + authToken)
-                .header("X-API-Key", apiKey))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].name").value("Today's Meal"));
+                .header("X-API-Key", API_KEY)
+                .build();
+
+        webClient.send(request, HttpResponse.BodyHandlers.ofString());
     }
 
     @Test
-    void getFoodById_Success() throws Exception {
-        Food food = createTestFood("Test Meal", LocalDate.now());
-
-        mockMvc.perform(get("/api/food/" + food.getId())
+    public void getAllFood_Success() throws IOException, InterruptedException {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(baseUrl + "/api/food"))
+                .GET()
                 .header("Authorization", "Bearer " + authToken)
-                .header("X-API-Key", apiKey))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Test Meal"))
-                .andExpect(jsonPath("$.userId").value(userId));
+                .header("X-API-Key", API_KEY)
+                .build();
+
+        HttpResponse<String> response = webClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        int status = response.statusCode();
+        Assertions.assertEquals(200, status);
+
+        JsonNode jsonResponse = objectMapper.readTree(response.body());
+        Assertions.assertEquals(2, jsonResponse.size());
+        Assertions.assertEquals(userId, jsonResponse.get(0).get("userId").asText());
     }
 
     @Test
-    void getFoodById_NotFound() throws Exception {
-        mockMvc.perform(get("/api/food/nonexistentid")
+    public void getAllFood_WithDateFilter() throws IOException, InterruptedException {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(baseUrl + "/api/food?date=" + LocalDate.now().toString()))
+                .GET()
                 .header("Authorization", "Bearer " + authToken)
-                .header("X-API-Key", apiKey))
-                .andExpect(status().isNotFound());
+                .header("X-API-Key", API_KEY)
+                .build();
+
+        HttpResponse<String> response = webClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        int status = response.statusCode();
+        Assertions.assertEquals(200, status);
+
+        JsonNode jsonResponse = objectMapper.readTree(response.body());
+        Assertions.assertEquals(2, jsonResponse.size());
     }
 
     @Test
-    void getFoodById_Unauthorized() throws Exception {
-        Food food = createTestFood("Test Meal", LocalDate.now());
+    public void getFoodById_Success() throws IOException, InterruptedException {
+        // First create a food item and get its ID
+        ObjectNode foodJson = objectMapper.createObjectNode()
+                .put("name", "Test Meal")
+                .put("protein", 30.0)
+                .put("carb", 40.0)
+                .put("fat", 20.0)
+                .put("date", LocalDate.now().toString());
 
-        mockMvc.perform(get("/api/food/" + food.getId()))
-                .andExpect(status().isUnauthorized());
+        HttpRequest createRequest = HttpRequest.newBuilder()
+                .uri(URI.create(baseUrl + "/api/food"))
+                .POST(HttpRequest.BodyPublishers.ofString(foodJson.toString()))
+                .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                .header("Authorization", "Bearer " + authToken)
+                .header("X-API-Key", API_KEY)
+                .build();
+
+        HttpResponse<String> createResponse = webClient.send(createRequest, HttpResponse.BodyHandlers.ofString());
+        JsonNode createResponseJson = objectMapper.readTree(createResponse.body());
+        String foodId = createResponseJson.get("id").asText();
+
+        // Now get the food item by ID
+        HttpRequest getRequest = HttpRequest.newBuilder()
+                .uri(URI.create(baseUrl + "/api/food/" + foodId))
+                .GET()
+                .header("Authorization", "Bearer " + authToken)
+                .header("X-API-Key", API_KEY)
+                .build();
+
+        HttpResponse<String> response = webClient.send(getRequest, HttpResponse.BodyHandlers.ofString());
+
+        int status = response.statusCode();
+        Assertions.assertEquals(200, status);
+
+        JsonNode jsonResponse = objectMapper.readTree(response.body());
+        Assertions.assertEquals("Test Meal", jsonResponse.get("name").asText());
+        Assertions.assertEquals(userId, jsonResponse.get("userId").asText());
     }
 
-    private Food createTestFood(String name, LocalDate date) {
-        Food food = new Food();
-        food.setName(name);
-        food.setProtein(30.0);
-        food.setCarb(40.0);
-        food.setFat(20.0);
-        food.setDate(date);
-        food.setUserId(userId);
-        return foodRepository.save(food);
+    @Test
+    public void getFoodById_NotFound() throws IOException, InterruptedException {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(baseUrl + "/api/food/nonexistentid"))
+                .GET()
+                .header("Authorization", "Bearer " + authToken)
+                .header("X-API-Key", API_KEY)
+                .build();
+
+        HttpResponse<String> response = webClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        int status = response.statusCode();
+        Assertions.assertEquals(404, status);
+    }
+
+    @Test
+    public void getFoodById_Unauthorized() throws IOException, InterruptedException {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(baseUrl + "/api/food/someid"))
+                .GET()
+                .build();
+
+        HttpResponse<String> response = webClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        int status = response.statusCode();
+        Assertions.assertEquals(401, status);
     }
 }

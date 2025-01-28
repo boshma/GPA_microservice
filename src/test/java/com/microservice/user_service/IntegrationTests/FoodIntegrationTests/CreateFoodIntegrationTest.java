@@ -17,9 +17,10 @@ import org.springframework.http.MediaType;
 
 import com.microservice.user_service.UserServiceApplication;
 import com.microservice.user_service.IntegrationTests.BaseIntegrationTest;
+import com.microservice.user_service.model.Food;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.slf4j.LoggerFactory;
 
 public class CreateFoodIntegrationTest extends BaseIntegrationTest {
@@ -31,12 +32,14 @@ public class CreateFoodIntegrationTest extends BaseIntegrationTest {
     private ObjectMapper objectMapper;
     private String baseUrl;
     private String authToken;
+    private String userId;
 
     @BeforeEach
     public void setUp() throws InterruptedException, IOException {
         clearDatabase();
         webClient = HttpClient.newHttpClient();
         objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule()); // For LocalDate serialization
 
         // Set random port and API key
         System.setProperty("server.port", "0");
@@ -51,7 +54,10 @@ public class CreateFoodIntegrationTest extends BaseIntegrationTest {
 
         Thread.sleep(500);
 
-        // First, register and login a test user
+        registerAndLoginUser();
+    }
+
+    private void registerAndLoginUser() throws IOException, InterruptedException {
         String registerJson = """
                 {
                     "username": "testuser",
@@ -69,6 +75,9 @@ public class CreateFoodIntegrationTest extends BaseIntegrationTest {
         HttpResponse<String> registerResponse = webClient.send(registerRequest, HttpResponse.BodyHandlers.ofString());
         logger.info("Register response status: " + registerResponse.statusCode());
         logger.info("Register response body: " + registerResponse.body());
+        
+        JsonNode registerResponseJson = objectMapper.readTree(registerResponse.body());
+        userId = registerResponseJson.get("userId").asText();
 
         String loginJson = """
                 {
@@ -96,18 +105,20 @@ public class CreateFoodIntegrationTest extends BaseIntegrationTest {
     public void createFood_Success() throws IOException, InterruptedException {
         logger.info("Starting createFood_Success test");
 
-        ObjectNode foodJson = objectMapper.createObjectNode()
-                .put("name", "Test Meal")
-                .put("protein", 30.0)
-                .put("carb", 40.0)
-                .put("fat", 20.0)
-                .put("date", LocalDate.now().toString());
+        Food food = new Food();
+        food.setName("Test Meal");
+        food.setProtein(30.0);
+        food.setCarb(40.0);
+        food.setFat(20.0);
+        food.setDate(LocalDate.now());
+        food.setUserId(userId);
 
-        logger.info("Request body: " + foodJson.toString());
+        String foodJson = objectMapper.writeValueAsString(food);
+        logger.info("Request body: " + foodJson);
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(baseUrl + "/api/food"))
-                .POST(HttpRequest.BodyPublishers.ofString(foodJson.toString()))
+                .POST(HttpRequest.BodyPublishers.ofString(foodJson))
                 .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
                 .header("Authorization", "Bearer " + authToken)
                 .header("X-API-Key", API_KEY)
@@ -124,13 +135,13 @@ public class CreateFoodIntegrationTest extends BaseIntegrationTest {
                 "\nResponse body: " + response.body());
 
         if (status == 201) {
-            JsonNode jsonResponse = objectMapper.readTree(response.body());
-            Assertions.assertEquals("Test Meal", jsonResponse.get("name").asText());
-            Assertions.assertEquals(30.0, jsonResponse.get("protein").asDouble());
-            Assertions.assertEquals(40.0, jsonResponse.get("carb").asDouble());
-            Assertions.assertEquals(20.0, jsonResponse.get("fat").asDouble());
-            Assertions.assertTrue(jsonResponse.has("userId"), "Response should contain a userId");
-            Assertions.assertTrue(jsonResponse.has("id"), "Response should contain an id");
+            Food responseFood = objectMapper.readValue(response.body(), Food.class);
+            Assertions.assertEquals("Test Meal", responseFood.getName());
+            Assertions.assertEquals(30.0, responseFood.getProtein());
+            Assertions.assertEquals(40.0, responseFood.getCarb());
+            Assertions.assertEquals(20.0, responseFood.getFat());
+            Assertions.assertNotNull(responseFood.getUserId(), "Response should contain a userId");
+            Assertions.assertNotNull(responseFood.getId(), "Response should contain an id");
         }
     }
 
@@ -139,21 +150,23 @@ public class CreateFoodIntegrationTest extends BaseIntegrationTest {
         logger.info("Starting createFood_InvalidData test");
         logger.info("Using auth token: " + authToken);
 
-        ObjectNode foodJson = objectMapper.createObjectNode()
-                .put("name", "") // Invalid empty name
-                .put("protein", -30.0) // Invalid negative value
-                .put("carb", 40.0)
-                .put("fat", 20.0)
-                .put("date", LocalDate.now().toString());
+        Food invalidFood = new Food();
+        invalidFood.setName(""); // Invalid empty name
+        invalidFood.setProtein(-30.0); // Invalid negative value
+        invalidFood.setCarb(40.0);
+        invalidFood.setFat(20.0);
+        invalidFood.setDate(LocalDate.now());
+        invalidFood.setUserId(userId);
 
-        logger.info("Request body: " + foodJson.toString());
+        String foodJson = objectMapper.writeValueAsString(invalidFood);
+        logger.info("Request body: " + foodJson);
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(baseUrl + "/api/food"))
-                .POST(HttpRequest.BodyPublishers.ofString(foodJson.toString()))
+                .POST(HttpRequest.BodyPublishers.ofString(foodJson))
                 .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
                 .header("Authorization", "Bearer " + authToken)
-                .header("X-API-Key", "test_api_key")
+                .header("X-API-Key", API_KEY)
                 .build();
 
         HttpResponse<String> response = webClient.send(request, HttpResponse.BodyHandlers.ofString());
@@ -167,16 +180,19 @@ public class CreateFoodIntegrationTest extends BaseIntegrationTest {
 
     @Test
     public void createFood_NoAuth() throws IOException, InterruptedException {
-        ObjectNode foodJson = objectMapper.createObjectNode()
-                .put("name", "Test Meal")
-                .put("protein", 30.0)
-                .put("carb", 40.0)
-                .put("fat", 20.0)
-                .put("date", LocalDate.now().toString());
+        Food food = new Food();
+        food.setName("Test Meal");
+        food.setProtein(30.0);
+        food.setCarb(40.0);
+        food.setFat(20.0);
+        food.setDate(LocalDate.now());
+        food.setUserId(userId);
+
+        String foodJson = objectMapper.writeValueAsString(food);
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(baseUrl + "/api/food"))
-                .POST(HttpRequest.BodyPublishers.ofString(foodJson.toString()))
+                .POST(HttpRequest.BodyPublishers.ofString(foodJson))
                 .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
                 .build();
 
@@ -188,16 +204,19 @@ public class CreateFoodIntegrationTest extends BaseIntegrationTest {
 
     @Test
     public void createFood_NoApiKey() throws IOException, InterruptedException {
-        ObjectNode foodJson = objectMapper.createObjectNode()
-                .put("name", "Test Meal")
-                .put("protein", 30.0)
-                .put("carb", 40.0)
-                .put("fat", 20.0)
-                .put("date", LocalDate.now().toString());
+        Food food = new Food();
+        food.setName("Test Meal");
+        food.setProtein(30.0);
+        food.setCarb(40.0);
+        food.setFat(20.0);
+        food.setDate(LocalDate.now());
+        food.setUserId(userId);
+
+        String foodJson = objectMapper.writeValueAsString(food);
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(baseUrl + "/api/food"))
-                .POST(HttpRequest.BodyPublishers.ofString(foodJson.toString()))
+                .POST(HttpRequest.BodyPublishers.ofString(foodJson))
                 .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
                 .header("Authorization", "Bearer " + authToken)
                 .build();
