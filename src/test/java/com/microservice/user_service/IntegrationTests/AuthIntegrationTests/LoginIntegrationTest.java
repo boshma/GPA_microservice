@@ -14,7 +14,7 @@ public class LoginIntegrationTest extends AbstractIntegrationTest {
 
     @BeforeEach
     @Override
-    public void setUp() throws InterruptedException {
+    public void setUp() throws InterruptedException, IOException {
         super.setUp();
         httpTestUtil = new HttpTestUtil(webClient, objectMapper, baseUrl, API_KEY);
     }

@@ -5,11 +5,11 @@ import org.junit.jupiter.api.AfterEach;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ApplicationContext;
 import java.net.http.HttpClient;
+import java.io.IOException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.microservice.user_service.UserServiceApplication;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.microservice.user_service.UserServiceApplication;
 
 public abstract class AbstractIntegrationTest extends BaseIntegrationTest {
     protected static final Logger logger = LoggerFactory.getLogger(AbstractIntegrationTest.class);
@@ -21,7 +21,7 @@ public abstract class AbstractIntegrationTest extends BaseIntegrationTest {
     protected String baseUrl;
 
     @BeforeEach
-    public void setUp() throws InterruptedException {
+    public void setUp() throws InterruptedException, IOException {
         clearDatabase();
         webClient = HttpClient.newHttpClient();
         objectMapper = new ObjectMapper();

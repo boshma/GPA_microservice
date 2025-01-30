@@ -1,61 +1,34 @@
 package com.microservice.user_service.IntegrationTests.FoodIntegrationTests;
 
 import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.LocalDate;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.boot.SpringApplication;
-import org.springframework.context.ApplicationContext;
-import org.springframework.http.MediaType;
-
-import com.microservice.user_service.UserServiceApplication;
-import com.microservice.user_service.IntegrationTests.BaseIntegrationTest;
-import com.microservice.user_service.model.Food;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.microservice.user_service.IntegrationTests.AbstractIntegrationTest;
+import com.microservice.user_service.IntegrationTests.HttpTestUtil;
+import com.microservice.user_service.model.Food;
 
-public class UpdateFoodIntegrationTest extends BaseIntegrationTest {
-    private static final Logger logger = LoggerFactory.getLogger(UpdateFoodIntegrationTest.class);
-    private static final String API_KEY = "test_api_key";
-
-    private ApplicationContext app;
-    private HttpClient webClient;
-    private ObjectMapper objectMapper;
-    private String baseUrl;
+public class UpdateFoodIntegrationTest extends AbstractIntegrationTest {
+    private HttpTestUtil httpTestUtil;
     private String authToken;
     private String userId;
 
     @BeforeEach
+    @Override
     public void setUp() throws InterruptedException, IOException {
-        clearDatabase();
-        webClient = HttpClient.newHttpClient();
-        objectMapper = new ObjectMapper();
+        super.setUp();
         objectMapper.registerModule(new JavaTimeModule());
-
-        System.setProperty("server.port", "0");
-        System.setProperty("api.key", API_KEY);
-
-        String[] args = new String[] {};
-        app = SpringApplication.run(UserServiceApplication.class, args);
-
-        baseUrl = "http://localhost:" + app.getEnvironment().getProperty("local.server.port");
-        logger.info("Application started on port: " + app.getEnvironment().getProperty("local.server.port"));
-
-        Thread.sleep(500);
-
+        httpTestUtil = new HttpTestUtil(webClient, objectMapper, baseUrl, API_KEY);
         registerAndLoginUser();
     }
 
     private void registerAndLoginUser() throws IOException, InterruptedException {
+        // Register
         String registerJson = """
                 {
                     "username": "testuser",
@@ -63,34 +36,23 @@ public class UpdateFoodIntegrationTest extends BaseIntegrationTest {
                     "password": "Password123!"
                 }""";
 
-        HttpRequest registerRequest = HttpRequest.newBuilder()
-                .uri(URI.create(baseUrl + "/api/auth/register"))
-                .POST(HttpRequest.BodyPublishers.ofString(registerJson))
-                .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
-                .header("X-API-Key", API_KEY)
-                .build();
-
-        HttpResponse<String> registerResponse = webClient.send(registerRequest, HttpResponse.BodyHandlers.ofString());
-        JsonNode registerResponseJson = objectMapper.readTree(registerResponse.body());
+        HttpResponse<String> registerResponse = httpTestUtil.sendRequest("POST", "/api/auth/register", registerJson);
+        JsonNode registerResponseJson = httpTestUtil.parseResponse(registerResponse);
         userId = registerResponseJson.get("userId").asText();
 
+        // Login
         String loginJson = """
                 {
                     "email": "test@example.com",
                     "password": "Password123!"
                 }""";
 
-        HttpRequest loginRequest = HttpRequest.newBuilder()
-                .uri(URI.create(baseUrl + "/api/auth/login"))
-                .POST(HttpRequest.BodyPublishers.ofString(loginJson))
-                .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
-                .header("X-API-Key", API_KEY)
-                .build();
-
-        HttpResponse<String> loginResponse = webClient.send(loginRequest, HttpResponse.BodyHandlers.ofString());
-        JsonNode loginResponseJson = objectMapper.readTree(loginResponse.body());
+        HttpResponse<String> loginResponse = httpTestUtil.sendRequest("POST", "/api/auth/login", loginJson);
+        JsonNode loginResponseJson = httpTestUtil.parseResponse(loginResponse);
         authToken = loginResponseJson.get("token").asText();
-        logger.info("Auth token obtained: " + authToken);
+        
+        // Update HttpTestUtil with auth token
+        httpTestUtil = new HttpTestUtil(webClient, objectMapper, baseUrl, API_KEY, authToken);
     }
 
     private String createTestFood(String name) throws IOException, InterruptedException {
@@ -102,15 +64,8 @@ public class UpdateFoodIntegrationTest extends BaseIntegrationTest {
         food.setDate(LocalDate.now());
         food.setUserId(userId);
 
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(baseUrl + "/api/food"))
-                .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(food)))
-                .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
-                .header("Authorization", "Bearer " + authToken)
-                .header("X-API-Key", API_KEY)
-                .build();
-
-        HttpResponse<String> response = webClient.send(request, HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> response = httpTestUtil.sendRequest("POST", "/api/food", 
+            objectMapper.writeValueAsString(food));
         Food createdFood = objectMapper.readValue(response.body(), Food.class);
         return createdFood.getId();
     }
@@ -118,7 +73,7 @@ public class UpdateFoodIntegrationTest extends BaseIntegrationTest {
     @Test
     public void updateFood_Success() throws IOException, InterruptedException {
         String foodId = createTestFood("Original Meal");
-        logger.info("Created test food with ID: " + foodId);
+        logger.info("Created test food with ID: {}", foodId);
 
         Food updatedFood = new Food();
         updatedFood.setName("Updated Meal");
@@ -128,23 +83,15 @@ public class UpdateFoodIntegrationTest extends BaseIntegrationTest {
         updatedFood.setDate(LocalDate.now());
         updatedFood.setUserId(userId);
 
-        logger.info("Update request body: " + objectMapper.writeValueAsString(updatedFood));
+        String requestBody = objectMapper.writeValueAsString(updatedFood);
+        logger.info("Update request body: {}", requestBody);
 
-        HttpRequest updateRequest = HttpRequest.newBuilder()
-                .uri(URI.create(baseUrl + "/api/food/" + foodId))
-                .PUT(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(updatedFood)))
-                .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
-                .header("Authorization", "Bearer " + authToken)
-                .header("X-API-Key", API_KEY)
-                .build();
+        HttpResponse<String> response = httpTestUtil.sendRequest("PUT", "/api/food/" + foodId, requestBody);
 
-        HttpResponse<String> response = webClient.send(updateRequest, HttpResponse.BodyHandlers.ofString());
+        logger.info("Update response status: {}", response.statusCode());
+        logger.info("Update response body: {}", response.body());
 
-        logger.info("Update response status: " + response.statusCode());
-        logger.info("Update response body: " + response.body());
-
-        int status = response.statusCode();
-        Assertions.assertEquals(200, status, "Expected Status Code 200");
+        Assertions.assertEquals(200, response.statusCode(), "Expected Status Code 200");
 
         Food returnedFood = objectMapper.readValue(response.body(), Food.class);
         Assertions.assertEquals("Updated Meal", returnedFood.getName());
@@ -164,18 +111,10 @@ public class UpdateFoodIntegrationTest extends BaseIntegrationTest {
         updatedFood.setDate(LocalDate.now());
         updatedFood.setUserId(userId);
 
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(baseUrl + "/api/food/nonexistentid"))
-                .PUT(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(updatedFood)))
-                .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
-                .header("Authorization", "Bearer " + authToken)
-                .header("X-API-Key", API_KEY)
-                .build();
+        HttpResponse<String> response = httpTestUtil.sendRequest("PUT", "/api/food/nonexistentid", 
+            objectMapper.writeValueAsString(updatedFood));
 
-        HttpResponse<String> response = webClient.send(request, HttpResponse.BodyHandlers.ofString());
-
-        int status = response.statusCode();
-        Assertions.assertEquals(404, status, "Expected Status Code 404");
+        Assertions.assertEquals(404, response.statusCode(), "Expected Status Code 404");
     }
 
     @Test
@@ -190,18 +129,10 @@ public class UpdateFoodIntegrationTest extends BaseIntegrationTest {
         invalidFood.setDate(LocalDate.now());
         invalidFood.setUserId(userId);
 
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(baseUrl + "/api/food/" + foodId))
-                .PUT(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(invalidFood)))
-                .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
-                .header("Authorization", "Bearer " + authToken)
-                .header("X-API-Key", API_KEY)
-                .build();
+        HttpResponse<String> response = httpTestUtil.sendRequest("PUT", "/api/food/" + foodId, 
+            objectMapper.writeValueAsString(invalidFood));
 
-        HttpResponse<String> response = webClient.send(request, HttpResponse.BodyHandlers.ofString());
-
-        int status = response.statusCode();
-        Assertions.assertEquals(400, status, "Expected Status Code 400");
+        Assertions.assertEquals(400, response.statusCode(), "Expected Status Code 400");
     }
 
     @Test
@@ -216,23 +147,19 @@ public class UpdateFoodIntegrationTest extends BaseIntegrationTest {
         updatedFood.setDate(LocalDate.now());
         updatedFood.setUserId(userId);
 
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(baseUrl + "/api/food/" + foodId))
-                .PUT(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(updatedFood)))
-                .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
-                .build();
+        // Create HttpTestUtil instance without auth token
+        HttpTestUtil noAuthHttpTestUtil = new HttpTestUtil(webClient, objectMapper, baseUrl, API_KEY);
+        HttpResponse<String> response = noAuthHttpTestUtil.sendRequest("PUT", "/api/food/" + foodId, 
+            objectMapper.writeValueAsString(updatedFood));
 
-        HttpResponse<String> response = webClient.send(request, HttpResponse.BodyHandlers.ofString());
-
-        int status = response.statusCode();
-        Assertions.assertEquals(401, status, "Expected Status Code 401");
+        Assertions.assertEquals(401, response.statusCode(), "Expected Status Code 401");
     }
 
     @Test
     public void updateFood_DifferentUser() throws IOException, InterruptedException {
         String foodId = createTestFood("Original Meal");
 
-        // Login as different user
+        // Register and login as different user
         String registerJson = """
                 {
                     "username": "testuser2",
@@ -240,14 +167,7 @@ public class UpdateFoodIntegrationTest extends BaseIntegrationTest {
                     "password": "Password123!"
                 }""";
 
-        HttpRequest registerRequest = HttpRequest.newBuilder()
-                .uri(URI.create(baseUrl + "/api/auth/register"))
-                .POST(HttpRequest.BodyPublishers.ofString(registerJson))
-                .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
-                .header("X-API-Key", API_KEY)
-                .build();
-
-        webClient.send(registerRequest, HttpResponse.BodyHandlers.ofString());
+        httpTestUtil.sendRequest("POST", "/api/auth/register", registerJson);
 
         String loginJson = """
                 {
@@ -255,14 +175,7 @@ public class UpdateFoodIntegrationTest extends BaseIntegrationTest {
                     "password": "Password123!"
                 }""";
 
-        HttpRequest loginRequest = HttpRequest.newBuilder()
-                .uri(URI.create(baseUrl + "/api/auth/login"))
-                .POST(HttpRequest.BodyPublishers.ofString(loginJson))
-                .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
-                .header("X-API-Key", API_KEY)
-                .build();
-
-        HttpResponse<String> loginResponse = webClient.send(loginRequest, HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> loginResponse = httpTestUtil.sendRequest("POST", "/api/auth/login", loginJson);
         String differentUserToken = objectMapper.readTree(loginResponse.body()).get("token").asText();
 
         Food updatedFood = new Food();
@@ -273,17 +186,11 @@ public class UpdateFoodIntegrationTest extends BaseIntegrationTest {
         updatedFood.setDate(LocalDate.now());
         updatedFood.setUserId(userId);
 
-        HttpRequest updateRequest = HttpRequest.newBuilder()
-                .uri(URI.create(baseUrl + "/api/food/" + foodId))
-                .PUT(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(updatedFood)))
-                .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
-                .header("Authorization", "Bearer " + differentUserToken)
-                .header("X-API-Key", API_KEY)
-                .build();
+        // Create HttpTestUtil instance with different user's token
+        HttpTestUtil differentUserHttpTestUtil = new HttpTestUtil(webClient, objectMapper, baseUrl, API_KEY, differentUserToken);
+        HttpResponse<String> response = differentUserHttpTestUtil.sendRequest("PUT", "/api/food/" + foodId, 
+            objectMapper.writeValueAsString(updatedFood));
 
-        HttpResponse<String> response = webClient.send(updateRequest, HttpResponse.BodyHandlers.ofString());
-
-        int status = response.statusCode();
-        Assertions.assertEquals(403, status, "Expected Status Code 403");
+        Assertions.assertEquals(403, response.statusCode(), "Expected Status Code 403");
     }
 }

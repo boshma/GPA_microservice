@@ -14,19 +14,32 @@ public class HttpTestUtil {
     private final ObjectMapper objectMapper;
     private final String baseUrl;
     private final String apiKey;
+    private final String authToken;
 
     public HttpTestUtil(HttpClient webClient, ObjectMapper objectMapper, String baseUrl, String apiKey) {
+        this(webClient, objectMapper, baseUrl, apiKey, null);
+    }
+
+    public HttpTestUtil(HttpClient webClient, ObjectMapper objectMapper, String baseUrl, String apiKey, String authToken) {
         this.webClient = webClient;
         this.objectMapper = objectMapper;
         this.baseUrl = baseUrl;
         this.apiKey = apiKey;
+        this.authToken = authToken;
     }
 
     public HttpResponse<String> sendRequest(String method, String path, String body) throws IOException, InterruptedException {
         HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
                 .uri(URI.create(baseUrl + path))
-                .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
-                .header("X-API-Key", apiKey);
+                .header("Content-Type", MediaType.APPLICATION_JSON_VALUE);
+
+        if (apiKey != null) {
+            requestBuilder.header("X-API-Key", apiKey);
+        }
+        
+        if (authToken != null) {
+            requestBuilder.header("Authorization", "Bearer " + authToken);
+        }
 
         switch (method.toUpperCase()) {
             case "POST":
