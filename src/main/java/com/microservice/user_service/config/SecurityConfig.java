@@ -1,9 +1,8 @@
 package com.microservice.user_service.config;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import com.microservice.user_service.config.filter.CompositeAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -16,23 +15,14 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
 
-import com.microservice.user_service.util.JwtUtil;
-import com.microservice.user_service.config.ApiKeyAuthFilter;
-import com.microservice.user_service.config.JwtAuthenticationFilter;
-
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
-    @Autowired
-    private JwtUtil jwtUtil;
+    private final CompositeAuthenticationFilter compositeAuthenticationFilter;
 
-    @Autowired
-    private ApiKeyAuthFilter apiKeyAuthFilter;
-
-    @Bean
-    public BCryptPasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+    public SecurityConfig(CompositeAuthenticationFilter compositeAuthenticationFilter) {
+        this.compositeAuthenticationFilter = compositeAuthenticationFilter;
     }
 
     @Bean
@@ -42,15 +32,7 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .headers(headers -> {
-                headers.frameOptions(Customizer.withDefaults()); 
-                headers.xssProtection(Customizer.withDefaults()); 
-                headers.contentSecurityPolicy(csp -> 
-                    csp.policyDirectives("default-src 'self'"));
-            })
-            .addFilterBefore(apiKeyAuthFilter, UsernamePasswordAuthenticationFilter.class)
-            .addFilterBefore(new JwtAuthenticationFilter(jwtUtil), 
-                UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(compositeAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
@@ -59,7 +41,6 @@ public class SecurityConfig {
         
         return http.build();
     }
-
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
