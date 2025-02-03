@@ -96,4 +96,26 @@ public class JwtUtil {
             return false; // Return false if the token is invalid
         }
     }
+
+    public String generateTokenWithCustomExpiration(String userId, long expirationOffset) {
+        try {
+            JWTClaimsSet claims = new JWTClaimsSet.Builder()
+                    .subject(userId)
+                    .issueTime(new Date())
+                    .expirationTime(new Date(System.currentTimeMillis() + expirationOffset))
+                    .build();
+    
+            JWSHeader header = new JWSHeader(JWSAlgorithm.HS256);
+            SignedJWT signedJWT = new SignedJWT(header, claims);
+            JWSSigner signer = new MACSigner(this.secretKey.getBytes());
+            signedJWT.sign(signer);
+    
+            return signedJWT.serialize();
+    
+        } catch (JOSEException e) {
+            throw new RuntimeException("Error generating JWT token", e);
+        }
+    }
+
+    
 }

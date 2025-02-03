@@ -49,4 +49,8 @@ public class TestUtils {
     public void clearCurrentUser() {
         currentTestUser = null;
     }
+
+    public String generateExpiredToken(String userId) {
+        return jwtUtil.generateTokenWithCustomExpiration(userId, -3600000); // expired 1 hour ago
+    }
 }
