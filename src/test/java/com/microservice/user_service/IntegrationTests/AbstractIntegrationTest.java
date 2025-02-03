@@ -13,8 +13,7 @@ import com.microservice.user_service.UserServiceApplication;
 
 public abstract class AbstractIntegrationTest extends BaseIntegrationTest {
     protected static final Logger logger = LoggerFactory.getLogger(AbstractIntegrationTest.class);
-    protected static final String API_KEY = "test_api_key";
-
+    protected String apiKey;
     protected ApplicationContext app;
     protected HttpClient webClient;
     protected ObjectMapper objectMapper;
@@ -27,10 +26,12 @@ public abstract class AbstractIntegrationTest extends BaseIntegrationTest {
         objectMapper = new ObjectMapper();
 
         System.setProperty("server.port", "0");
-        System.setProperty("api.key", API_KEY);
 
         String[] args = new String[] {};
         app = SpringApplication.run(UserServiceApplication.class, args);
+        
+        // Get API key from environment
+        apiKey = app.getEnvironment().getProperty("api.key");
         baseUrl = "http://localhost:" + app.getEnvironment().getProperty("local.server.port");
         logger.info("Application started on port: {}", app.getEnvironment().getProperty("local.server.port"));
 

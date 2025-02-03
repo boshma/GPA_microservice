@@ -18,7 +18,7 @@ public class JwtIntegrationTest extends AbstractIntegrationTest {
     @Override
     public void setUp() throws InterruptedException, IOException {
         super.setUp();
-        httpTestUtil = new HttpTestUtil(webClient, objectMapper, baseUrl, API_KEY);
+        httpTestUtil = new HttpTestUtil(webClient, objectMapper, baseUrl, apiKey);
         setupTestUser();
     }
 
@@ -48,7 +48,7 @@ public class JwtIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     public void accessProtectedEndpointWithValidToken() throws IOException, InterruptedException {
-        HttpTestUtil authenticatedUtil = new HttpTestUtil(webClient, objectMapper, baseUrl, API_KEY, jwtToken);
+        HttpTestUtil authenticatedUtil = new HttpTestUtil(webClient, objectMapper, baseUrl, apiKey, jwtToken);
         
         HttpResponse<String> response = authenticatedUtil.sendRequest("GET", "/api/food", null);
         
@@ -66,7 +66,7 @@ public class JwtIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     public void accessProtectedEndpointWithInvalidToken() throws IOException, InterruptedException {
-        HttpTestUtil invalidTokenUtil = new HttpTestUtil(webClient, objectMapper, baseUrl, API_KEY, "invalid.token.here");
+        HttpTestUtil invalidTokenUtil = new HttpTestUtil(webClient, objectMapper, baseUrl, apiKey, "invalid.token.here");
         
         HttpResponse<String> response = invalidTokenUtil.sendRequest("GET", "/api/food", null);
         
@@ -77,7 +77,7 @@ public class JwtIntegrationTest extends AbstractIntegrationTest {
     @Test
     public void accessProtectedEndpointWithExpiredToken() throws IOException, InterruptedException {
         String expiredToken = generateExpiredToken(userId);
-        HttpTestUtil expiredTokenUtil = new HttpTestUtil(webClient, objectMapper, baseUrl, API_KEY, expiredToken);
+        HttpTestUtil expiredTokenUtil = new HttpTestUtil(webClient, objectMapper, baseUrl, apiKey, expiredToken);
         
         HttpResponse<String> response = expiredTokenUtil.sendRequest("GET", "/api/food", null);
         

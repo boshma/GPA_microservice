@@ -16,7 +16,7 @@ public class RegisterIntegrationTest extends AbstractIntegrationTest {
     @Override
     public void setUp() throws InterruptedException, IOException {
         super.setUp();
-        httpTestUtil = new HttpTestUtil(webClient, objectMapper, baseUrl, API_KEY);
+        httpTestUtil = new HttpTestUtil(webClient, objectMapper, baseUrl, apiKey);
     }
 
     @Test

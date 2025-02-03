@@ -23,7 +23,7 @@ public class UpdateFoodIntegrationTest extends AbstractIntegrationTest {
     public void setUp() throws InterruptedException, IOException {
         super.setUp();
         objectMapper.registerModule(new JavaTimeModule());
-        httpTestUtil = new HttpTestUtil(webClient, objectMapper, baseUrl, API_KEY);
+        httpTestUtil = new HttpTestUtil(webClient, objectMapper, baseUrl, apiKey);
         registerAndLoginUser();
     }
 
@@ -52,7 +52,7 @@ public class UpdateFoodIntegrationTest extends AbstractIntegrationTest {
         authToken = loginResponseJson.get("token").asText();
         
         // Update HttpTestUtil with auth token
-        httpTestUtil = new HttpTestUtil(webClient, objectMapper, baseUrl, API_KEY, authToken);
+        httpTestUtil = new HttpTestUtil(webClient, objectMapper, baseUrl, apiKey, authToken);
     }
 
     private String createTestFood(String name) throws IOException, InterruptedException {
@@ -148,7 +148,7 @@ public class UpdateFoodIntegrationTest extends AbstractIntegrationTest {
         updatedFood.setUserId(userId);
 
         // Create HttpTestUtil instance without auth token
-        HttpTestUtil noAuthHttpTestUtil = new HttpTestUtil(webClient, objectMapper, baseUrl, API_KEY);
+        HttpTestUtil noAuthHttpTestUtil = new HttpTestUtil(webClient, objectMapper, baseUrl, apiKey);
         HttpResponse<String> response = noAuthHttpTestUtil.sendRequest("PUT", "/api/food/" + foodId, 
             objectMapper.writeValueAsString(updatedFood));
 
@@ -187,7 +187,7 @@ public class UpdateFoodIntegrationTest extends AbstractIntegrationTest {
         updatedFood.setUserId(userId);
 
         // Create HttpTestUtil instance with different user's token
-        HttpTestUtil differentUserHttpTestUtil = new HttpTestUtil(webClient, objectMapper, baseUrl, API_KEY, differentUserToken);
+        HttpTestUtil differentUserHttpTestUtil = new HttpTestUtil(webClient, objectMapper, baseUrl, apiKey, differentUserToken);
         HttpResponse<String> response = differentUserHttpTestUtil.sendRequest("PUT", "/api/food/" + foodId, 
             objectMapper.writeValueAsString(updatedFood));
 

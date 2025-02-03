@@ -22,8 +22,8 @@ public class CreateFoodIntegrationTest extends AbstractIntegrationTest {
     @Override
     public void setUp() throws InterruptedException, IOException {
         super.setUp();
-        objectMapper.registerModule(new JavaTimeModule()); // For LocalDate serialization
-        httpTestUtil = new HttpTestUtil(webClient, objectMapper, baseUrl, API_KEY);
+        objectMapper.registerModule(new JavaTimeModule());
+        httpTestUtil = new HttpTestUtil(webClient, objectMapper, baseUrl, apiKey);
         registerAndLoginUser();
     }
 
@@ -59,7 +59,7 @@ public class CreateFoodIntegrationTest extends AbstractIntegrationTest {
         logger.info("Auth token obtained: {}", authToken);
         
         // Update HttpTestUtil with auth token
-        httpTestUtil = new HttpTestUtil(webClient, objectMapper, baseUrl, API_KEY, authToken);
+        httpTestUtil = new HttpTestUtil(webClient, objectMapper, baseUrl, apiKey, authToken);
     }
 
     @Test
@@ -134,7 +134,7 @@ public class CreateFoodIntegrationTest extends AbstractIntegrationTest {
         String foodJson = objectMapper.writeValueAsString(food);
         
         // Create new HttpTestUtil instance without auth token
-        HttpTestUtil noAuthHttpTestUtil = new HttpTestUtil(webClient, objectMapper, baseUrl, API_KEY);
+        HttpTestUtil noAuthHttpTestUtil = new HttpTestUtil(webClient, objectMapper, baseUrl, apiKey);
         HttpResponse<String> response = noAuthHttpTestUtil.sendRequest("POST", "/api/food", foodJson);
 
         Assertions.assertEquals(401, response.statusCode(), 

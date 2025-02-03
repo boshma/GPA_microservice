@@ -23,7 +23,7 @@ public class DeleteFoodIntegrationTest extends AbstractIntegrationTest {
     public void setUp() throws InterruptedException, IOException {
         super.setUp();
         objectMapper.registerModule(new JavaTimeModule());
-        httpTestUtil = new HttpTestUtil(webClient, objectMapper, baseUrl, API_KEY);
+        httpTestUtil = new HttpTestUtil(webClient, objectMapper, baseUrl, apiKey);
         registerAndLoginUser();
     }
 
@@ -52,7 +52,7 @@ public class DeleteFoodIntegrationTest extends AbstractIntegrationTest {
         authToken = loginResponseJson.get("token").asText();
         
         // Update HttpTestUtil with auth token
-        httpTestUtil = new HttpTestUtil(webClient, objectMapper, baseUrl, API_KEY, authToken);
+        httpTestUtil = new HttpTestUtil(webClient, objectMapper, baseUrl, apiKey, authToken);
     }
 
     private String createTestFood() throws IOException, InterruptedException {
@@ -96,7 +96,7 @@ public class DeleteFoodIntegrationTest extends AbstractIntegrationTest {
         String foodId = createTestFood();
 
         // Create HttpTestUtil instance without auth token
-        HttpTestUtil noAuthHttpTestUtil = new HttpTestUtil(webClient, objectMapper, baseUrl, API_KEY);
+        HttpTestUtil noAuthHttpTestUtil = new HttpTestUtil(webClient, objectMapper, baseUrl, apiKey);
         HttpResponse<String> response = noAuthHttpTestUtil.sendRequest("DELETE", "/api/food/" + foodId, null);
         
         Assertions.assertEquals(401, response.statusCode(), "Expected Status Code 401");
@@ -141,7 +141,7 @@ public class DeleteFoodIntegrationTest extends AbstractIntegrationTest {
         String differentUserToken = objectMapper.readTree(loginResponse.body()).get("token").asText();
 
         // Create HttpTestUtil instance with different user's token
-        HttpTestUtil differentUserHttpTestUtil = new HttpTestUtil(webClient, objectMapper, baseUrl, API_KEY, differentUserToken);
+        HttpTestUtil differentUserHttpTestUtil = new HttpTestUtil(webClient, objectMapper, baseUrl, apiKey, differentUserToken);
         HttpResponse<String> response = differentUserHttpTestUtil.sendRequest("DELETE", "/api/food/" + foodId, null);
         
         Assertions.assertEquals(403, response.statusCode(), "Expected Status Code 403");

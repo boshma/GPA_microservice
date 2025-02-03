@@ -21,7 +21,7 @@ public class GetFoodIntegrationTest extends AbstractIntegrationTest {
     @Override
     public void setUp() throws InterruptedException, IOException {
         super.setUp();
-        httpTestUtil = new HttpTestUtil(webClient, objectMapper, baseUrl, API_KEY);
+        httpTestUtil = new HttpTestUtil(webClient, objectMapper, baseUrl, apiKey);
         registerAndLoginUser();
         createTestFood("Test Meal 1");
         createTestFood("Test Meal 2");
@@ -52,7 +52,7 @@ public class GetFoodIntegrationTest extends AbstractIntegrationTest {
         authToken = loginResponseJson.get("token").asText();
         
         // Update HttpTestUtil with auth token
-        httpTestUtil = new HttpTestUtil(webClient, objectMapper, baseUrl, API_KEY, authToken);
+        httpTestUtil = new HttpTestUtil(webClient, objectMapper, baseUrl, apiKey, authToken);
     }
 
     private void createTestFood(String name) throws IOException, InterruptedException {
